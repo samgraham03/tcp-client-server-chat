@@ -8,7 +8,11 @@ Run server
 ```
 ./server.out
 ```
-Run client
+Run Java client
 ```
-java ./client/Client.java
+java ./clients/JavaClient.java
+```
+Run Python client
+```
+python3 ./clients/python_client.py
 ```
