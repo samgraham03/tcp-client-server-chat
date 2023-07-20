@@ -114,14 +114,16 @@ int main(int argc, char** argv) {
                 }
                 break;
             }
-            printf("Client: %s", buffer);
+            buffer[strcspn(buffer, "\r\n")] = 0; // Remove trailing newline / return
+            printf("Client: %s\n", buffer);
 
             /* Get user input */
             fputs("Enter message ('exit' to quit): ", stdout);
             memset(buffer, 0, sizeof(buffer));
             fgets(buffer, sizeof(buffer), stdin);
+            buffer[strcspn(buffer, "\r\n")] = 0; // Remove trailing newline / return
 
-            if (strcmp(buffer, "exit\n") == 0) {
+            if (strcmp(buffer, "exit") == 0) {
                 cleanup();
                 exit(EXIT_SUCCESS);
             }

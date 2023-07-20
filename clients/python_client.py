@@ -3,6 +3,8 @@ import socket
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 8080
 
+BUFFER_SIZE = 1024
+
 try: # "with" context manager handles auto-closing of socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         client_socket.connect((SERVER_IP, SERVER_PORT))
@@ -14,17 +16,15 @@ try: # "with" context manager handles auto-closing of socket
             if message.lower() == "exit":
                 break
 
-            message += '\n' # hardcoded fix, C server sends with newline - REVIEW
-
             # Send message to server
             client_socket.send(message.encode())
 
             # Receive message from server
-            response = client_socket.recv(1024).decode()
+            response = client_socket.recv(BUFFER_SIZE).decode()
             if not response:
                 print("Server closed. Exiting")
                 break
-            print("Server:", response, end='') # hardcoded fix, C server sends with newline - REVIEW
+            print("Server:", response)
 except ConnectionRefusedError:
     print("Error: Connection refused. Make sure the server is running.")
 except TimeoutError:
