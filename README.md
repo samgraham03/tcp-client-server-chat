@@ -2,8 +2,7 @@
 
 Compile server
 ```
-gcc -o server.out server.c ./utils/serializer.c cli_handlers.c server_handlers.c
-
+gcc -o server.out ./server/server.c ./server/utils/serializer.c ./server/cli_handlers.c ./server/server_handlers.c
 ```
 Run server
 ```
