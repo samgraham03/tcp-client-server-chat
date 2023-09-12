@@ -1,4 +1,4 @@
-#include "cli_handlers.h"
+#include "handlers/cli_handlers.h"
 
 /* PLACEHOLDER */
 void generic_print_response(pipe_io_t cli_io) {

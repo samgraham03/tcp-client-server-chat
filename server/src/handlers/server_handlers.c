@@ -1,4 +1,4 @@
-#include "server_handlers.h"
+#include "handlers/server_handlers.h"
 
 int server_list_clients(pipe_io_t server_io) {
     int test_client_list[] = {1, 2, 3, 4, 5};

@@ -9,8 +9,8 @@
 
 #include "pipe_comm.h"
 
-#include "server_handlers.h"
-#include "cli_handlers.h"
+#include "handlers/server_handlers.h"
+#include "handlers/cli_handlers.h"
 
 int main(int argc, char** argv) {
     char buffer[BUFFER_SIZE];

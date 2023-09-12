@@ -1,4 +1,4 @@
-#include "serializer.h"
+#include "utils/serializer.h"
 
 int serialize_int_array(int arr[], int size, char* result) {
     if (size == 0) {
