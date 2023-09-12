@@ -2,11 +2,11 @@
 
 Compile server
 ```
-gcc -o server.out ./server/server.c ./server/utils/serializer.c ./server/cli_handlers.c ./server/server_handlers.c
+make -C ./server
 ```
 Run server
 ```
-./server.out
+./server/server.out
 ```
 Run Java client
 ```
