@@ -64,7 +64,6 @@ int remove_client(client_list_t* client_list, int client_id) {
 
 void remove_all_clients(client_list_t* client_list) {
     pthread_mutex_lock(&client_list->lock);
-    bool closed = false;
     for (int i = 0; i < client_list->size; i++) {
         if (client_list->fds[i] != -1) {
             close(client_list->fds[i]);

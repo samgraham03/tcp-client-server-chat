@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -I ./include/
+CFLAGS = -Wall -g -I ./include/
 LIBS = -pthread
 
 SRC_DIR = ./src
