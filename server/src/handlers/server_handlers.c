@@ -1,32 +1,25 @@
 #include "handlers/server_handlers.h"
 
-int server_list_clients(pipe_io_t server_io) {
-    int test_client_list[] = {1, 2, 3, 4, 5};
-    int size = sizeof(test_client_list) / sizeof(int);
+#include "handlers/client_list_handlers.h"
 
-    char msg[20*MAX_CONNECTIONS];
-    serialize_int_array(test_client_list, size, msg);
-
-    write(server_io.out, msg, strlen(msg));
-
+int server_list_clients(pipe_io_t server_io, client_list_t* list) {
+    char serialized[20*MAX_CONNECTIONS];
+    serialize_int_array(list->fds, list->size, serialized);
+    write(server_io.out, serialized, strlen(serialized));
     return 1;
 }
 
-int server_attach(pipe_io_t server_io, int* client_socket_fd) {
+int server_attach(pipe_io_t server_io, client_list_t* list, int client_socket_fd) {
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, sizeof(buffer));
 
     while (1) {
         /* Recieve message from client */
         memset(buffer, 0, sizeof(buffer));
-        ssize_t recv_size = recv(*client_socket_fd, buffer, sizeof(buffer) - 1, 0);
+        ssize_t recv_size = recv(client_socket_fd, buffer, sizeof(buffer) - 1, 0);
         if (recv_size == 0) {
             write(server_io.out, "client disconnected", strlen("client disconnected"));
-            if (*client_socket_fd != -1) {
-                puts("closing client socket");
-                close(*client_socket_fd);
-                *client_socket_fd = -1;
-            }
+            remove_client(list, client_socket_fd);
             break;
         }
         buffer[strcspn(buffer, "\r\n")] = 0; /* Remove trailing newline / return */
@@ -45,13 +38,13 @@ int server_attach(pipe_io_t server_io, int* client_socket_fd) {
         }
 
         /* Send message to client */
-        send(*client_socket_fd, buffer, strlen(buffer), 0);
+        send(client_socket_fd, buffer, strlen(buffer), 0);
     }
 
     return 1;
 }
 
-int server_disconnect(pipe_io_t server_io, int client_socket_fd) {
+int server_disconnect(pipe_io_t server_io, client_list_t* list, int client_socket_fd) {
     char msg[] = "server_disconnect() not yet implemented";
     write(server_io.out, msg, strlen(msg));
     return 1;

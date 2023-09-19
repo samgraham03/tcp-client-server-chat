@@ -6,11 +6,16 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "pipe_comm.h"
+#include "client_list.h"
 
 #include "handlers/server_handlers.h"
 #include "handlers/cli_handlers.h"
+#include "handlers/client_list_handlers.h"
+
+#include "workers/listener.h"
 
 int main(int argc, char** argv) {
     char buffer[BUFFER_SIZE];
@@ -53,8 +58,6 @@ int main(int argc, char** argv) {
         close(cli_io.in);
         close(cli_io.out);
 
-        /* ---TODO: start listener thread here--- */
-
         /* Configure server address info */
         struct sockaddr_in server_addr;
         memset(&server_addr, 0, sizeof(server_addr));
@@ -68,6 +71,9 @@ int main(int argc, char** argv) {
             perror("Error: socket()\n");
             exit(EXIT_FAILURE);
         }
+
+        client_list_t client_list;
+        init_client_list(&client_list, MAX_CONNECTIONS);
 
 #ifdef REUSE_ADDR
         /* Bypass socket TIME_WAIT status when restarting server */
@@ -88,14 +94,22 @@ int main(int argc, char** argv) {
         }
 
         /* Listen for incoming connections */
-        int listen_result = listen(server_socket_fd, 1);
+        int listen_result = listen(server_socket_fd, MAX_CONNECTIONS);
         if (listen_result == -1) {
             perror("Error: listen()\n");
             close(server_socket_fd);
             exit(EXIT_FAILURE);
         }
 
-        int client_socket_fd = -1;
+        listener_context_t listener_context;
+        listener_context.exit = 0;
+        listener_context.server_socket_fd = server_socket_fd;
+        listener_context.client_list = &client_list;
+
+        /* --register sigint handler to cleanup and set exit to 0-- */
+
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, listener_worker, (void*)&listener_context);
 
         while (1) {
             int client_id = -1;
@@ -106,23 +120,11 @@ int main(int argc, char** argv) {
             int inputs = sscanf(buffer, "%s %i", cmd, &client_id);
 
             if (inputs == 1 && strcmp(cmd, "list") == 0) {
-                server_list_clients(server_io);
-            } else if (/*inputs == 2 &&*/ strcmp(cmd, "attach") == 0) {
-                /* Await a connection - this should be delegated to a seperate thread */
-                if (client_socket_fd == -1) {
-                    write(server_io.out, "Waiting for client to connect", strlen("Waiting for client to connect"));
-                    client_socket_fd = accept(server_socket_fd, NULL, NULL);
-                    if (client_socket_fd == -1) {
-                        write(server_io.out, "Error", strlen("Error"));
-                    } else {
-                        write(server_io.out, "Client accepted", strlen("Client accepted"));
-                    }
-                }
-                if (client_socket_fd != -1) {
-                    server_attach(server_io, &client_socket_fd);
-                }
+                server_list_clients(server_io, &client_list);
+            } else if (inputs == 2 && strcmp(cmd, "attach") == 0) {
+                server_attach(server_io, &client_list, client_id);
             } else if (inputs == 2 && strcmp(cmd, "disconnect") == 0) {
-                server_disconnect(server_io, client_id);
+                server_disconnect(server_io, &client_list, client_id);
             } else if (inputs == 1 && strcmp(cmd, "tail") == 0) {
                 server_tail(server_io);
             } else if (inputs == 1 && strcmp(cmd, "exit") == 0) {
@@ -135,6 +137,10 @@ int main(int argc, char** argv) {
             memset(buffer, 0, sizeof(buffer));
             memset(cmd, 0, sizeof(cmd));
         }
+
+        listener_context.exit = 1;
+        pthread_join(thread_id, NULL);
+        destroy_client_list(&client_list);
 
         close(server_io.in);
         close(server_io.out);
@@ -163,14 +169,11 @@ int main(int argc, char** argv) {
             } else if (inputs == 1 && strcmp(cmd, "list") == 0) {
                 cli_list_clients(cli_io);
             } else if (inputs == 2 && strcmp(cmd, "attach") == 0) {
-                /* cli_attach(cli_io, client_id); */
+                cli_attach(cli_io, client_id);
                 cli_attach(cli_io, -1);
             } else if (inputs == 1 && strcmp(cmd, "attach") == 0) {
-                /*
-                // cli_list_clients(cli_io);
-                // puts("try: attach {client_id}");
-                */
-                cli_attach(cli_io, -1);
+                cli_list_clients(cli_io);
+                puts("try: attach {client_id}");
             } else if (inputs == 2 && strcmp(cmd, "disconnect") == 0) {
                 cli_disconnect(cli_io, client_id);
             } else if (inputs == 1 && strcmp(cmd, "disconnect") == 0) {

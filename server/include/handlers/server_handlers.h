@@ -12,14 +12,16 @@
 
 #include "utils/serializer.h"
 
+#include "client_list.h"
+
 /* List accepted connections */
-int server_list_clients(pipe_io_t server_io);
+int server_list_clients(pipe_io_t server_io, client_list_t* list);
 
 /* Enter chat with specified client */
-int server_attach(pipe_io_t server_io, int* client_socket_fd);
+int server_attach(pipe_io_t server_io, client_list_t* list, int client_socket_fd);
 
 /* Remove specified client */
-int server_disconnect(pipe_io_t server_io, int client_socket_fd);
+int server_disconnect(pipe_io_t server_io, client_list_t* list, int client_socket_fd);
 
 /* Listen to server logs */
 int server_tail(pipe_io_t server_io);
